@@ -1,4 +1,4 @@
-﻿Build started 16/03/2017 16:39:10.
+﻿Build started 23/03/2017 16:49:44.
      1>Project "C:\hlocal\DSI\P12\P12.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\software\programacion\MSVStudio2013\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt MainOO.cpp
@@ -10,4 +10,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.14
+Time Elapsed 00:00:00.71

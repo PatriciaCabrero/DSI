@@ -1,8 +1,12 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
+#include <WindowsX.h>
 
 #include "basewin.h"
+
+enum CLOCKMODE{ RUN, STOP };
+enum MODE{ SelectMode, DrawMode, DragMode};
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -47,6 +51,16 @@ class MainWindow : public BaseWindow<MainWindow>
 	ID2D1SolidColorBrush    *pBrush;//Para la elipse
 	ID2D1SolidColorBrush    *pStroke;//Para la flecha
 	D2D1_ELLIPSE            ellipse;
+	MODE					mode;
+	CLOCKMODE				clockmode;
+	SYSTEMTIME				time; //Variable que solo se pide en el modo run.
+	
+	//Crear elipses
+	D2D1_ELLIPSE			ellipseMouse;
+	D2D1_COLOR_F			colorellipse = D2D1::ColorF(1.0f, 0.0f, 0.0f, 1.0f);
+	D2D1_POINT_2F           ptMouse;
+	//CURSOR
+	HCURSOR					cursorH,cursorC, cursorA;
 
 	void    CalculateLayout();
 	HRESULT CreateGraphicsResources();
@@ -54,8 +68,15 @@ class MainWindow : public BaseWindow<MainWindow>
 	void	DrawClockHand(float fHandLength, float fAngle, float fStrokeWidth);
 	void    OnPaint();
 	void    Resize();
-	void	RenderScene();
-	BOOL	HitTest(float x, float y);
+	void	RenderClock();
+	void	OnKeyDown(WPARAM wparam);
+	void	RenderElipseMouse();
+	BOOL	HitTest(D2D1_ELLIPSE ellipse, float x, float y);
+	//Control del raton
+	void    OnLButtonDown(int pixelX, int pixelY, DWORD flags);
+	void    OnLButtonUp();
+	void    OnMouseMove(int pixelX, int pixelY, DWORD flags);
+	void	OnRButtonDown();
 
 public:
 
@@ -69,9 +90,13 @@ public:
 
 
 
-BOOL MainWindow::HitTest(float x, float y){
-
-	return true;
+BOOL MainWindow::HitTest(D2D1_ELLIPSE ellipse, float x, float y){
+	const float a = ellipse.radiusX;
+	const float b = ellipse.radiusY;
+	const float x1 = x - ellipse.point.x;
+	const float y1 = y - ellipse.point.y;
+	const float d = ((x1 * x1) / (a * a)) + ((y1 * y1) / (b * b));
+	return d <= 1.0f;
 }
 // Recalculate drawing layout when the size of the window changes.
 
@@ -92,18 +117,11 @@ void MainWindow::DrawClockHand(float fHandLength, float fAngle, float fStrokeWid
 		ellipse.point, endPoint, pStroke, fStrokeWidth);
 }
 
-void MainWindow::RenderScene()
+void MainWindow::RenderClock()
 {
-	pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
-
 	pRenderTarget->FillEllipse(ellipse, pBrush);
 	pRenderTarget->DrawEllipse(ellipse, pStroke);
-
-
 	// Draw hands
-	SYSTEMTIME time;
-	GetLocalTime(&time);
-
 	// 60 minutes = 30 degrees, 1 minute = 0.5 degree
 	const float fHourAngle = (360.0f / 12) * (time.wHour) + (time.wMinute * 0.5f);
 	const float fMinuteAngle = (360.0f / 60) * (time.wMinute);
@@ -117,13 +135,19 @@ void MainWindow::RenderScene()
 	pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
+void MainWindow::RenderElipseMouse(){
+	//DIBUJA LA ELIPSE DEL RATON
+	pRenderTarget->FillEllipse(ellipseMouse, pBrush);
+	pRenderTarget->DrawEllipse(ellipseMouse, pStroke);
+}
+
 void MainWindow::CalculateLayout()
 {
 	if (pRenderTarget != NULL)
 	{
 		D2D1_SIZE_F size = pRenderTarget->GetSize();
-		const float x = size.width / 2;
-		const float y = size.height / 2;
+		const float x = size.width / 8;
+		const float y = size.height / 8;
 		const float radius = min(x, y);
 		ellipse = D2D1::Ellipse(D2D1::Point2F(x, y), radius, radius);
 	}
@@ -134,6 +158,10 @@ HRESULT MainWindow::CreateGraphicsResources()
 	HRESULT hr = S_OK;
 	if (pRenderTarget == NULL)
 	{
+		//CURSORES.
+		cursorC = LoadCursor(0, IDC_CROSS);
+		cursorH = LoadCursor(0, IDC_HAND);
+		cursorA = LoadCursor(0, IDC_ARROW);
 		RECT rc;
 		GetClientRect(m_hwnd, &rc);
 
@@ -175,9 +203,13 @@ void MainWindow::OnPaint()
 		BeginPaint(m_hwnd, &ps);
 
 		pRenderTarget->BeginDraw();
-		RenderScene();
+		pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
+		RenderClock();
+		RenderElipseMouse();
 		
 		hr = pRenderTarget->EndDraw();
+
+
 
 		if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
 		{
@@ -230,6 +262,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_CREATE:
+
 		if (FAILED(D2D1CreateFactory(
 			D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
 		{
@@ -238,7 +271,11 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetTimer(m_hwnd, // handle to main window
 			0, // timer identifier
 			1000, //1-second interval
-			NULL); // timer callback
+			NULL); // timer callback
+		clockmode = CLOCKMODE::RUN;
+		GetLocalTime(&time);
+
+        DPIScale::Initialize(pFactory);
 		return 0;
 
 	case WM_DESTROY:
@@ -256,15 +293,120 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_TIMER: // process the 1-second timer
+		if (clockmode == CLOCKMODE::RUN)
+			GetLocalTime(&time);
+
 		PostMessage(m_hwnd, WM_PAINT, NULL, NULL);
 		return 0;
-		/*
+
+	case WM_KEYDOWN:
+		OnKeyDown(wParam);
+		return 0;
+		break;
+
+	case WM_LBUTTONDOWN:
+		OnLButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		return 0;
+
+	case WM_LBUTTONUP:
+		OnLButtonUp();
+		return 0;
+
+	case WM_RBUTTONDOWN:
+		OnRButtonDown();
+		return 0;
+
 	case WM_MOUSEMOVE:
+		OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		return 0;
 
-
-		HitTest()
-		return 0;*/
+	default:
+		break;
 	}
 	return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
 
+void MainWindow::OnKeyDown(WPARAM wParam){
+
+	switch (wParam)
+	{
+	case VK_ESCAPE:
+		PostMessage(m_hwnd, WM_DESTROY, NULL, NULL);
+		return;
+	case VK_SPACE:
+		if (clockmode == CLOCKMODE::RUN)
+			clockmode = CLOCKMODE::STOP;
+		else clockmode = CLOCKMODE::RUN;
+	default:
+		break;
+	}
+}
+
+void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
+{
+
+	//if (mode == MODE::DrawMode)
+	SetCapture(m_hwnd);
+	ellipseMouse.point = ptMouse = DPIScale::PixelsToDips(pixelX, pixelY);
+	ellipseMouse.radiusX = ellipseMouse.radiusY = 1.0f;
+	InvalidateRect(m_hwnd, NULL, FALSE);
+}
+
+void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
+{
+	mode = MODE::SelectMode;
+	if (flags & MK_LBUTTON)
+	{
+		const D2D1_POINT_2F dips = DPIScale::PixelsToDips(pixelX, pixelY);
+
+		const float width = (dips.x - ptMouse.x) / 2;
+		const float height = (dips.y - ptMouse.y) / 2;
+		const float x1 = ptMouse.x + width;
+		const float y1 = ptMouse.y + height;
+
+		ellipseMouse = D2D1::Ellipse(D2D1::Point2F(x1, y1), width, height);
+
+		InvalidateRect(m_hwnd, NULL, FALSE);
+		switch (mode){
+		case MODE::SelectMode:
+			if (HitTest(ellipseMouse, dips.x, dips.y)){
+				SetCursor(cursorH);
+			}
+			else SetCursor(cursorA);
+			break;
+		}
+	}
+}
+
+void MainWindow::OnLButtonUp()
+{
+	ReleaseCapture();
+}
+
+void MainWindow::OnRButtonDown()
+{
+	CHOOSECOLOR cc; // common dialog box structure
+	static COLORREF acrCustClr[16]; // array of custom colors
+	static DWORD rgbCurrent; // initial color selection
+	// Initialize CHOOSECOLOR
+	/*switch (mode){
+	case MODE::SelectMode:
+	if (HITTest(ellipseMouse, dips.x, dips.y)){
+	cursor = IDC_HAND;
+	}
+
+	}*/
+
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = m_hwnd;
+	cc.lpCustColors = (LPDWORD)acrCustClr;
+	cc.rgbResult = rgbCurrent;
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+	if (ChooseColor(&cc) == TRUE)
+	{
+		//En ​cc.rgbResult​ tenemos el color seleccionado
+		//Utilizarlo para configurar nuestra brocha
+		//Es necesario transformarlo al formato de color de D2D
+	}
+}
