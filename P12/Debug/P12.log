@@ -1,13 +1,23 @@
-﻿Build started 23/03/2017 16:49:44.
+﻿Build started 30/03/2017 16:51:36.
      1>Project "C:\hlocal\DSI\P12\P12.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\software\programacion\MSVStudio2013\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt MainOO.cpp
          MainOO.cpp
+     1>c:\hlocal\dsi\p12\mainoo.cpp(313): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(323): warning C4244: '=' : conversion from 'int' to 'FLOAT', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(324): warning C4244: '=' : conversion from 'int' to 'FLOAT', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(338): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(371): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(372): warning C4553: '==' : operator has no effect; did you intend '='?
+     1>c:\hlocal\dsi\p12\mainoo.cpp(375): warning C4553: '==' : operator has no effect; did you intend '='?
+     1>c:\hlocal\dsi\p12\mainoo.cpp(447): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(448): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\hlocal\dsi\p12\mainoo.cpp(449): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
        Link:
-         C:\software\programacion\MSVStudio2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\hlocal\DSI\Win32Project2\Debug\P12.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\hlocal\DSI\Win32Project2\Debug\P12.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\hlocal\DSI\Win32Project2\Debug\P12.lib" /MACHINE:X86 Debug\MainOO.obj
-         P12.vcxproj -> C:\hlocal\DSI\Win32Project2\Debug\P12.exe
+         C:\software\programacion\MSVStudio2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\hlocal\DSI\P12\Debug\P12.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\hlocal\DSI\P12\Debug\P12.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\hlocal\DSI\P12\Debug\P12.lib" /MACHINE:X86 Debug\MainOO.obj
+         P12.vcxproj -> C:\hlocal\DSI\P12\Debug\P12.exe
      1>Done Building Project "C:\hlocal\DSI\P12\P12.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.71
+Time Elapsed 00:00:00.67

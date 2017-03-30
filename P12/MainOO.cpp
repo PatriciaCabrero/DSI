@@ -59,6 +59,8 @@ class MainWindow : public BaseWindow<MainWindow>
 	D2D1_ELLIPSE			ellipseMouse;
 	D2D1_COLOR_F			colorellipse = D2D1::ColorF(1.0f, 0.0f, 0.0f, 1.0f);
 	D2D1_POINT_2F           ptMouse;
+	ID2D1SolidColorBrush    *pBrushM;//Para la elipse
+
 	//CURSOR
 	HCURSOR					cursorH,cursorC, cursorA;
 
@@ -137,7 +139,7 @@ void MainWindow::RenderClock()
 
 void MainWindow::RenderElipseMouse(){
 	//DIBUJA LA ELIPSE DEL RATON
-	pRenderTarget->FillEllipse(ellipseMouse, pBrush);
+	pRenderTarget->FillEllipse(ellipseMouse, pBrushM);
 	pRenderTarget->DrawEllipse(ellipseMouse, pStroke);
 }
 
@@ -158,10 +160,12 @@ HRESULT MainWindow::CreateGraphicsResources()
 	HRESULT hr = S_OK;
 	if (pRenderTarget == NULL)
 	{
+		mode = MODE::SelectMode;
 		//CURSORES.
 		cursorC = LoadCursor(0, IDC_CROSS);
 		cursorH = LoadCursor(0, IDC_HAND);
 		cursorA = LoadCursor(0, IDC_ARROW);
+		SetCursor(cursorA);
 		RECT rc;
 		GetClientRect(m_hwnd, &rc);
 
@@ -171,13 +175,13 @@ HRESULT MainWindow::CreateGraphicsResources()
 			D2D1::RenderTargetProperties(),
 			D2D1::HwndRenderTargetProperties(m_hwnd, size),
 			&pRenderTarget);
-
 		if (SUCCEEDED(hr))
 		{
 			const D2D1_COLOR_F color = D2D1::ColorF(1.0f, 1.0f, 0);
 			hr = pRenderTarget->CreateSolidColorBrush(color, &pBrush);
 			const D2D1_COLOR_F color1 = D2D1::ColorF(0.0f, 0.0f, 0);
 			hr = pRenderTarget->CreateSolidColorBrush(color1, &pStroke);
+			hr = pRenderTarget->CreateSolidColorBrush(colorellipse, &pBrushM);
 			if (SUCCEEDED(hr))
 			{
 				CalculateLayout();
@@ -305,7 +309,20 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_LBUTTONDOWN:
-		OnLButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		if (mode == MODE::SelectMode){
+			if (HitTest(ellipseMouse, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))){
+				mode = MODE::DragMode;
+			}
+			else
+			{
+				mode = MODE::DrawMode;
+			}
+			OnLButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		}
+		else if (mode == MODE::DragMode){
+			ptMouse.x = GET_X_LPARAM(lParam);
+			ptMouse.y = GET_Y_LPARAM(lParam);
+		}
 		return 0;
 
 	case WM_LBUTTONUP:
@@ -317,6 +334,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_MOUSEMOVE:
+		if (mode == MODE::SelectMode){
+			if (HitTest(ellipseMouse, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))){
+				SetCursor(LoadCursor(NULL, IDC_HAND));
+				mode = MODE::DragMode;
+			}
+		}
+
 		OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
 		return 0;
 
@@ -344,43 +368,62 @@ void MainWindow::OnKeyDown(WPARAM wParam){
 
 void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
 {
-
-	//if (mode == MODE::DrawMode)
-	SetCapture(m_hwnd);
-	ellipseMouse.point = ptMouse = DPIScale::PixelsToDips(pixelX, pixelY);
-	ellipseMouse.radiusX = ellipseMouse.radiusY = 1.0f;
-	InvalidateRect(m_hwnd, NULL, FALSE);
+	if (HitTest(ellipse, pixelX, pixelY)){
+		mode == MODE::DragMode;
+	}
+	else{
+		mode == MODE::DrawMode;
+		SetCapture(m_hwnd);
+		ellipseMouse.point = ptMouse = DPIScale::PixelsToDips(pixelX, pixelY);
+		ellipseMouse.radiusX = ellipseMouse.radiusY = 1.0f;
+		InvalidateRect(m_hwnd, NULL, FALSE);
+		SetCursor(cursorC);
+	}
+	
 }
 
 void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
 {
-	mode = MODE::SelectMode;
+	const D2D1_POINT_2F dips = DPIScale::PixelsToDips(pixelX, pixelY);
+	if (mode != MODE::DrawMode){
+		if (HitTest(ellipseMouse, dips.x, dips.y)){
+			SetCursor(cursorH);
+		}
+		else {
+			mode = MODE::SelectMode;
+			SetCursor(cursorA);
+
+		}
+	}
 	if (flags & MK_LBUTTON)
 	{
-		const D2D1_POINT_2F dips = DPIScale::PixelsToDips(pixelX, pixelY);
-
+		
 		const float width = (dips.x - ptMouse.x) / 2;
 		const float height = (dips.y - ptMouse.y) / 2;
 		const float x1 = ptMouse.x + width;
 		const float y1 = ptMouse.y + height;
 
-		ellipseMouse = D2D1::Ellipse(D2D1::Point2F(x1, y1), width, height);
+		if (mode == MODE::DrawMode){
+			ellipseMouse = D2D1::Ellipse(D2D1::Point2F(x1, y1), width, height);
 
-		InvalidateRect(m_hwnd, NULL, FALSE);
-		switch (mode){
-		case MODE::SelectMode:
-			if (HitTest(ellipseMouse, dips.x, dips.y)){
-				SetCursor(cursorH);
-			}
-			else SetCursor(cursorA);
-			break;
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			SetCursor(cursorC);
+		}
+		if (mode == MODE::DragMode)
+		{
+			ellipseMouse.point.x += (float)width*2;
+			ellipseMouse.point.y += (float)height*2;
+			ptMouse = dips;
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
 }
 
+
 void MainWindow::OnLButtonUp()
 {
 	ReleaseCapture();
+	mode = MODE::SelectMode;
 }
 
 void MainWindow::OnRButtonDown()
@@ -389,13 +432,6 @@ void MainWindow::OnRButtonDown()
 	static COLORREF acrCustClr[16]; // array of custom colors
 	static DWORD rgbCurrent; // initial color selection
 	// Initialize CHOOSECOLOR
-	/*switch (mode){
-	case MODE::SelectMode:
-	if (HITTest(ellipseMouse, dips.x, dips.y)){
-	cursor = IDC_HAND;
-	}
-
-	}*/
 
 	ZeroMemory(&cc, sizeof(cc));
 	cc.lStructSize = sizeof(cc);
@@ -408,5 +444,10 @@ void MainWindow::OnRButtonDown()
 		//En ​cc.rgbResult​ tenemos el color seleccionado
 		//Utilizarlo para configurar nuestra brocha
 		//Es necesario transformarlo al formato de color de D2D
+		colorellipse.r = (float)GetRValue(cc.rgbResult)/255.0;
+		colorellipse.g = (float)GetGValue(cc.rgbResult)/255.0;
+		colorellipse.b = (float)GetBValue(cc.rgbResult)/255.0;
+		pBrushM->SetColor(colorellipse);
+
 	}
 }
