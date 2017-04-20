@@ -1,0 +1,25 @@
+﻿Build started 20/04/2017 16:45:44.
+     1>Project "C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\RumbleController_2010.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\software\programacion\MSVStudio2013\VC\bin\CL.exe /c /IDXUT\Core /IDXUT\Optional /ZI /nologo /W4 /WX- /Od /Oi /Oy- /D WIN32 /D _DEBUG /D DEBUG /D PROFILE /D _WINDOWS /D D3DXFX_LARGEADDRESS_HANDLE /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /arch:SSE2 /fp:fast /Zc:wchar_t /Zc:forScope /openmp- /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt  RumbleController.cpp
+         RumbleController.cpp
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(92): warning C4554: '|' : check operator precedence for possible error; use parentheses to clarify precedence
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(93): warning C4244: '+=' : conversion from 'float' to 'LONG', possible loss of data
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(94): warning C4244: '-=' : conversion from 'float' to 'LONG', possible loss of data
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(57): warning C4100: 'dwTime' : unreferenced formal parameter
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(56): warning C4100: 'idTimer' : unreferenced formal parameter
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(55): warning C4100: 'message' : unreferenced formal parameter
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(54): warning C4100: 'hwnd' : unreferenced formal parameter
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(60): warning C4101: 'rc' : unreferenced local variable
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(61): warning C4189: 'hND' : local variable is initialized but not referenced
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(66): warning C4189: 'wButtons' : local variable is initialized but not referenced
+     1>c:\users\usuario_local\hlocal\directxsamples\rumblecontroller\rumblecontroller.cpp(143): warning C4101: 'bGotMsg' : unreferenced local variable
+       Link:
+         C:\software\programacion\MSVStudio2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\Debug\RumbleController.exe" /INCREMENTAL /NOLOGO xinput.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:C:\software\programacion\MSVStudio2013\VC\Include\Manifest\dpiaware.manifest /DEBUG /PDB:"C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\Debug\RumbleController.pdb" /SUBSYSTEM:WINDOWS /LARGEADDRESSAWARE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\Debug\RumbleController.lib" /MACHINE:X86 /SAFESEH  Debug\RumbleController.res
+         Debug\RumbleController.obj
+         RumbleController_2010.vcxproj -> C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\Debug\RumbleController.exe
+     1>Done Building Project "C:\Users\usuario_local\hlocal\DirectXSamples\RumbleController\RumbleController_2010.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.74
