@@ -375,11 +375,14 @@
     <None Include="DXUT\Optional\directx.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="HIDBOX.cpp" />
     <ClCompile Include="RumbleController.cpp" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HID.h" />
+    <ClInclude Include="HIDBOX.h" />
     <CLInclude Include="resource.h" />
     <ResourceCompile Include="RumbleController.rc" />
   </ItemGroup>
