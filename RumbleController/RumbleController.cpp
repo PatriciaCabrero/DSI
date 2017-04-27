@@ -58,7 +58,7 @@ VOID CALLBACK MyTimerProc(
 {
 	POINT pt;  //Cursor location
 	RECT rc; //Client area coordinates.
-	HWND hND = GetActiveWindow();
+	HWND hWnd = GetActiveWindow();
 	UpdateControllerState();
 	
 
@@ -94,17 +94,54 @@ VOID CALLBACK MyTimerProc(
 					pt.y -= 10 * (float)g_Controllers[i].state.Gamepad.sThumbLY / (float)MAXINT16;
 					SetCursorPos(pt.x, pt.y);
 			}
+
 			WORD wbuttons = g_Controllers[i].state.Gamepad.wButtons;
 			WORD wlastButtons = g_Controllers[i].lastState.Gamepad.wButtons;
-			if ((wbuttons & XINPUT_GAMEPAD_X) && ~(wlastButtons & XINPUT_GAMEPAD_X))
+
+			if ((wbuttons & XINPUT_GAMEPAD_X) && !(wlastButtons & XINPUT_GAMEPAD_X))
 				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
-			if (~(wbuttons & XINPUT_GAMEPAD_X) && (wlastButtons & XINPUT_GAMEPAD_X))
+			
+			if (!(wbuttons & XINPUT_GAMEPAD_X) && (wlastButtons & XINPUT_GAMEPAD_X))
 				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
-			if ((wbuttons & XINPUT_GAMEPAD_B) && ~(wlastButtons & XINPUT_GAMEPAD_B))
+
+			
+			if ((wbuttons & XINPUT_GAMEPAD_B) & !(wlastButtons & XINPUT_GAMEPAD_B))
 				mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
-			if (~(wbuttons & XINPUT_GAMEPAD_B) && (wlastButtons & XINPUT_GAMEPAD_B))
+			if (!(wbuttons & XINPUT_GAMEPAD_B) && (wlastButtons & XINPUT_GAMEPAD_B))
+				mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
+			
+			//Shoulder
+			if ((wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
+				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
+			if (!(wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
+				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
+
+			if ((wbuttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER))
+				mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
+			if (!(wbuttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER))
 				mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
 
+			//Shoulder
+			if ((wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
+				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
+			if (!(wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
+				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
+			
+			// Y/A Para ir para atras en el navegador
+			if ((wbuttons & XINPUT_GAMEPAD_Y) && !(wlastButtons & XINPUT_GAMEPAD_Y))
+				keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
+			if (!(wbuttons & XINPUT_GAMEPAD_Y) && (wlastButtons & XINPUT_GAMEPAD_Y))
+				keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_KEYUP | 0, 0);
+			if ((wbuttons & XINPUT_GAMEPAD_A) && !(wlastButtons & XINPUT_GAMEPAD_A))
+				keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
+			if (!(wbuttons & XINPUT_GAMEPAD_A) && (wlastButtons & XINPUT_GAMEPAD_A))
+				keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_KEYUP | 0, 0);
+
+			//ESCAPE
+			if ((wbuttons & XINPUT_GAMEPAD_BACK) && !(wlastButtons & XINPUT_GAMEPAD_BACK))
+				keybd_event(VK_ESCAPE, 0x1B, KEYEVENTF_EXTENDEDKEY | 0, 0);
+
+			
 		}
 	}
 	RenderFrame();
@@ -285,7 +322,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
                 // App is now inactive, so disable XInput to prevent
                 // user input from effecting application and to 
                 // disable rumble. 
-                XInputEnable( false );
+               // XInputEnable( false );
             }
             break;
         }
@@ -317,8 +354,11 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
             EndPaint( hWnd, &ps );
             return 0;
         }
-		
-
+		case WM_KEYDOWN:
+		{
+			if (wParam == VK_ESCAPE) PostQuitMessage(0);
+			break;
+		}
         case WM_DESTROY:
         {
             PostQuitMessage( 0 );
