@@ -1,8 +1,12 @@
-//-----------------------------------------------------------------------------
-// File: RumbleController.cpp
-//
-// Copyright (c) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
+#include "HIDBOX.h"
+
+#define TARGET_XBOX360
+#ifdef TARGET_XBOX360
+	HIDBOX Control;
+
+#endif
+
+
 #define STRICT
 #include <windows.h>
 #include <commdlg.h>
@@ -14,21 +18,13 @@
 #include "resource.h"
 
 
+
 //-----------------------------------------------------------------------------
 // Function-prototypes
 //-----------------------------------------------------------------------------
 LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 HRESULT UpdateControllerState();
 void RenderFrame();
-
-
-//-----------------------------------------------------------------------------
-// Defines, constants, and global variables
-//-----------------------------------------------------------------------------
-#define SAFE_DELETE(p)  { if(p) { delete (p);     (p)=NULL; } }
-#define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }
-#define MAX_CONTROLLERS     4
-#define INPUT_DEADZONE  ( 0.24f * FLOAT(0x7FFF) )  // Default to 24% of the +/- 32767 range.   This is a reasonable default value but can be altered if needed.
 
 
 
@@ -44,168 +40,93 @@ struct CONTROLER_STATE
     XINPUT_VIBRATION vibration;
 };
 
-CONTROLER_STATE g_Controllers[MAX_CONTROLLERS];
+
 WCHAR g_szMessage[4][1024] = {0};
 HWND g_hWnd;
 bool    g_bDeadZoneOn = true;
 SYSTEMTIME time;
 
-VOID CALLBACK MyTimerProc(
-	HWND hwnd,        // handle to window for timer messages 
-	UINT message,     // WM_TIMER message 
-	UINT idTimer,     // timer identifier 
-	DWORD dwTime)     // current system time 
-{
-	POINT pt;  //Cursor location
-	RECT rc; //Client area coordinates.
+void generaEventos(){
+	POINT pt, pt0;
+	GetCursorPos(&pt);
 	HWND hWnd = GetActiveWindow();
-	UpdateControllerState();
-	
-
-	for (DWORD i = 0; i < MAX_CONTROLLERS; i++){
-		WORD wButtons = g_Controllers[i].state.Gamepad.wButtons;
-
-		if (g_bDeadZoneOn)
-		{
-			// Zero value if thumbsticks are within the dead zone 
-			if ((g_Controllers[i].state.Gamepad.sThumbLX < INPUT_DEADZONE &&
-				g_Controllers[i].state.Gamepad.sThumbLX > -INPUT_DEADZONE) &&
-				(g_Controllers[i].state.Gamepad.sThumbLY < INPUT_DEADZONE &&
-				g_Controllers[i].state.Gamepad.sThumbLY > -INPUT_DEADZONE))
-			{
-				g_Controllers[i].state.Gamepad.sThumbLX = 0;
-				g_Controllers[i].state.Gamepad.sThumbLY = 0;
-			}
-
-			if ((g_Controllers[i].state.Gamepad.sThumbRX < INPUT_DEADZONE &&
-				g_Controllers[i].state.Gamepad.sThumbRX > -INPUT_DEADZONE) &&
-				(g_Controllers[i].state.Gamepad.sThumbRY < INPUT_DEADZONE &&
-				g_Controllers[i].state.Gamepad.sThumbRY > -INPUT_DEADZONE))
-			{
-				g_Controllers[i].state.Gamepad.sThumbRX = 0;
-				g_Controllers[i].state.Gamepad.sThumbRY = 0;
-			}
-		}
-		GetCursorPos(&pt);
-		if (g_Controllers[i].dwResult == ERROR_SUCCESS)
-		{
-			if (g_Controllers[i].state.Gamepad.sThumbLX !=0 | g_Controllers[i].state.Gamepad.sThumbLY!=0 ) {
-					pt.x += 10 * (float)g_Controllers[i].state.Gamepad.sThumbLX / (float)MAXINT16;
-					pt.y -= 10 * (float)g_Controllers[i].state.Gamepad.sThumbLY / (float)MAXINT16;
-					SetCursorPos(pt.x, pt.y);
-			}
-
-			WORD wbuttons = g_Controllers[i].state.Gamepad.wButtons;
-			WORD wlastButtons = g_Controllers[i].lastState.Gamepad.wButtons;
-
-			if ((wbuttons & XINPUT_GAMEPAD_X) && !(wlastButtons & XINPUT_GAMEPAD_X))
-				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
-			
-			if (!(wbuttons & XINPUT_GAMEPAD_X) && (wlastButtons & XINPUT_GAMEPAD_X))
-				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
-
-			
-			if ((wbuttons & XINPUT_GAMEPAD_B) & !(wlastButtons & XINPUT_GAMEPAD_B))
-				mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
-			if (!(wbuttons & XINPUT_GAMEPAD_B) && (wlastButtons & XINPUT_GAMEPAD_B))
-				mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
-			
-			//Shoulder
-			if ((wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
-				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
-			if (!(wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
-				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
-
-			if ((wbuttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER))
-				mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
-			if (!(wbuttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER))
-				mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
-
-			//Shoulder
-			if ((wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && !(wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
-				mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
-			if (!(wbuttons & XINPUT_GAMEPAD_LEFT_SHOULDER) && (wlastButtons & XINPUT_GAMEPAD_LEFT_SHOULDER))
-				mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
-			
-			// Y/A Para ir para atras en el navegador
-			if ((wbuttons & XINPUT_GAMEPAD_Y) && !(wlastButtons & XINPUT_GAMEPAD_Y))
-				keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
-			if (!(wbuttons & XINPUT_GAMEPAD_Y) && (wlastButtons & XINPUT_GAMEPAD_Y))
-				keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_KEYUP | 0, 0);
-			if ((wbuttons & XINPUT_GAMEPAD_A) && !(wlastButtons & XINPUT_GAMEPAD_A))
-				keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
-			if (!(wbuttons & XINPUT_GAMEPAD_A) && (wlastButtons & XINPUT_GAMEPAD_A))
-				keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_KEYUP | 0, 0);
-
-			//ESCAPE
-			if ((wbuttons & XINPUT_GAMEPAD_BACK) && !(wlastButtons & XINPUT_GAMEPAD_BACK))
-				keybd_event(VK_ESCAPE, 0x1B, KEYEVENTF_EXTENDEDKEY | 0, 0);
-
-			
-		}
+	//JOYL2RATON
+	if (Control.TLX() != 0 || Control.TLY() != 0){
+		pt.x += Control.TLX()/10;
+		pt.y -= Control.TLY()/10;
+		SetCursorPos(pt.x, pt.y);
 	}
-	RenderFrame();
+
+	//EVT RATON
+	if (Control.BD(XINPUT_GAMEPAD_X))
+		mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
+
+	if (Control.BU(XINPUT_GAMEPAD_X))
+		mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
+
+
+	if (Control.BD(XINPUT_GAMEPAD_B) )
+		mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
+	if (Control.BU( XINPUT_GAMEPAD_B) )
+		mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
+
+	//Shoulder
+	if (Control.BD(XINPUT_GAMEPAD_LEFT_SHOULDER) )
+		mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);
+	if (Control.BU(XINPUT_GAMEPAD_LEFT_SHOULDER))
+		mouse_event(MOUSEEVENTF_LEFTUP, pt.x, pt.y, 0, NULL);
+
+	if (Control.BD( XINPUT_GAMEPAD_RIGHT_SHOULDER))
+		mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
+	if (Control.BU( XINPUT_GAMEPAD_RIGHT_SHOULDER))
+		mouse_event(MOUSEEVENTF_RIGHTUP, pt.x, pt.y, 0, NULL);
+
+
+	if (Control.BD(XINPUT_GAMEPAD_BACK)){
+		mouse_event(MOUSEEVENTF_RIGHTDOWN, pt.x, pt.y, 0, NULL);
+	}
+
+	// Y/A Para ir para atras en el navegador
+	if (Control.BD( XINPUT_GAMEPAD_Y) )
+		keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
+	if (Control.BD( XINPUT_GAMEPAD_Y))
+		keybd_event(VK_BROWSER_BACK, 0x46, KEYEVENTF_KEYUP | 0, 0);
+	if (Control.BD(XINPUT_GAMEPAD_A))
+		keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_EXTENDEDKEY | 0, 0);
+	if (Control.BD( XINPUT_GAMEPAD_A))
+		keybd_event(VK_BROWSER_FORWARD, 0x46, KEYEVENTF_KEYUP | 0, 0);
+
+	//ESCAPE
+	if (Control.BD(XINPUT_GAMEPAD_BACK))
+		PostQuitMessage(0);
+
 }
-//-----------------------------------------------------------------------------
-// Name: WinMain()
-// Desc: Entry point for the application.  Since we use a simple dialog for 
-//       user interaction we don't need to pump messages.
-//-----------------------------------------------------------------------------
+
+VOID CALLBACK MyTimerProc( HWND hwnd, UINT message,	UINT idTimer, DWORD dwTime) // current system time 
+{
+
+	//UpdateControllerState();
+	Control.actualiza();
+	generaEventos();
+
+}
+
 int APIENTRY wWinMain( HINSTANCE hInst, HINSTANCE, LPWSTR, int )
 {
-    // Register the window class
-    HBRUSH hBrush = CreateSolidBrush( 0xFF0000 );
-    WNDCLASSEX wc =
-    {
-        sizeof( WNDCLASSEX ), 0, MsgProc, 0L, 0L, hInst, NULL,
-        LoadCursor( NULL, IDC_ARROW ), hBrush,
-        NULL, L"XInputSample", NULL
-    };
-    RegisterClassEx( &wc );
-
-    // Create the application's window
-    g_hWnd = CreateWindow( L"XInputSample", L"XInput Sample: RumbleController",
-                           WS_OVERLAPPED | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-                           CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
-                           NULL, NULL, hInst, NULL );
-
-    // Init state
-    ZeroMemory( g_Controllers, sizeof( CONTROLER_STATE ) * MAX_CONTROLLERS );
+	Control.calibra();
+   
 	//Create el timer
-	SetTimer(g_hWnd, // handle to main window
-		0, // timer identifier
-		10,  //1-second interval 
-		(TIMERPROC)MyTimerProc); // timer callback
-    // Enter the message loop
-    bool bGotMsg;
+	UINT_PTR timer = SetTimer(g_hWnd, 0, 10, (TIMERPROC)MyTimerProc); // timer callback
+    
+	// Enter the message loop
     MSG msg;
-    msg.message = WM_NULL;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-	/*
-    while( WM_QUIT != msg.message )
-    {
-        // Use PeekMessage() so we can use idle time to render the scene and call pEngine->DoWork()
-        bGotMsg = ( PeekMessage( &msg, NULL, 0U, 0U, PM_REMOVE ) != 0 );
-
-        if( bGotMsg )
-        {
-            // Translate and dispatch the message
-            TranslateMessage( &msg );
-            DispatchMessage( &msg );
-        }
-        else
-        {
-            UpdateControllerState();
-            RenderFrame();
-        }
-    }*/
-
     // Clean up 
-    UnregisterClass( L"XInputSample", NULL );
+	KillTimer(NULL, timer);
 
     return 0;
 }
@@ -214,12 +135,7 @@ int APIENTRY wWinMain( HINSTANCE hInst, HINSTANCE, LPWSTR, int )
 //-----------------------------------------------------------------------------
 HRESULT UpdateControllerState()
 {
-    for( DWORD i = 0; i < MAX_CONTROLLERS; i++ )
-    {
-        g_Controllers[i].lastState = g_Controllers[i].state;
-        g_Controllers[i].dwResult = XInputGetState( i, &g_Controllers[i].state );
-	}
-
+   
     return S_OK;
 }
 
@@ -227,80 +143,9 @@ HRESULT UpdateControllerState()
 //-----------------------------------------------------------------------------
 void RenderFrame()
 {
-    bool bRepaint = false;
 
-    WCHAR sz[4][1024];
-    for( DWORD i = 0; i < MAX_CONTROLLERS; i++ )
-    {
-        if( g_Controllers[i].dwResult == ERROR_SUCCESS )
-        {
-
-            if( !g_Controllers[i].bLockVibration )
-            {
-                // Map bLeftTrigger's 0-255 to wLeftMotorSpeed's 0-65535
-                if( g_Controllers[i].state.Gamepad.bLeftTrigger > 0 )
-                    g_Controllers[i].vibration.wLeftMotorSpeed = ( ( g_Controllers[i].state.Gamepad.bLeftTrigger +
-                                                                     1 ) * 256 ) - 1;
-                else
-                    g_Controllers[i].vibration.wLeftMotorSpeed = 0;
-
-                // Map bRightTrigger's 0-255 to wRightMotorSpeed's 0-65535
-                if( g_Controllers[i].state.Gamepad.bRightTrigger > 0 )
-                    g_Controllers[i].vibration.wRightMotorSpeed = ( ( g_Controllers[i].state.Gamepad.bRightTrigger +
-                                                                      1 ) * 256 ) - 1;
-                else
-                    g_Controllers[i].vibration.wRightMotorSpeed = 0;
-            }
-
-            if( ( g_Controllers[i].state.Gamepad.wButtons ) &&
-                ( g_Controllers[i].lastState.Gamepad.wButtons == 0 ) )
-            {
-                if( !( !g_Controllers[i].bLockVibration && g_Controllers[i].vibration.wRightMotorSpeed == 0 &&
-                       g_Controllers[i].vibration.wLeftMotorSpeed == 0 ) )
-                    g_Controllers[i].bLockVibration = !g_Controllers[i].bLockVibration;
-            }
-
-            XInputSetState( i, &g_Controllers[i].vibration );
-
-            StringCchPrintfW( sz[i], 1024,
-                              L"Controller %d: Connected\n"
-                              L"  Left Motor Speed: %d\n"
-                              L"  Right Motor Speed: %d\n"
-                              L"  Rumble Lock: %d\n", i,
-                              g_Controllers[i].vibration.wLeftMotorSpeed,
-                              g_Controllers[i].vibration.wRightMotorSpeed,
-                              g_Controllers[i].bLockVibration );
-
-        }
-        else if( g_Controllers[i].dwResult == ERROR_DEVICE_NOT_CONNECTED )
-        {
-            StringCchPrintf( sz[i], 1024,
-                             L"Controller %d: Not connected", i );
-        }
-        else
-        {
-            StringCchPrintf( sz[i], 1024,
-                             L"Controller %d: Generic error", i );
-        }
-
-        if( wcscmp( sz[i], g_szMessage[i] ) != 0 )
-        {
-            StringCchCopy( g_szMessage[i], 1024, sz[i] );
-            bRepaint = true;
-        }
-    }
-
-    if( bRepaint )
-    {
-        // Repaint the window if needed 
-        InvalidateRect( g_hWnd, NULL, TRUE );
-        UpdateWindow( g_hWnd );
-    }
-
-    // This sample doesn't use Direct3D.  Instead, it just yields CPU time to other 
-    // apps but this is not typically done when rendering
-    Sleep( 10 );
 }
+
 
 
 //-----------------------------------------------------------------------------
@@ -327,7 +172,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
             break;
         }
 
-        case WM_PAINT:
+      /*  case WM_PAINT:
         {
             // Paint some simple explanation text
             PAINTSTRUCT ps;
@@ -353,7 +198,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 
             EndPaint( hWnd, &ps );
             return 0;
-        }
+        }*/
 		case WM_KEYDOWN:
 		{
 			if (wParam == VK_ESCAPE) PostQuitMessage(0);

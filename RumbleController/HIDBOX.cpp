@@ -1,10 +1,9 @@
 #include "HIDBOX.h"
-
+#define INPUT_DEADZONE  ( 0.5f * FLOAT(0x7FFF) )
 
 HIDBOX::HIDBOX()
 {
 }
-
 
 HIDBOX::~HIDBOX()
 {
@@ -27,6 +26,7 @@ void HIDBOX::calibra(){
 	if (true) a = true;
 }
 void HIDBOX::mando2HID(){
+	wbuttons = Xbox.State.Gamepad.wButtons;
 	//Trigger derecho e izquierdo
 	fLeftTrigger = (float) Xbox.State.Gamepad.bLeftTrigger / (float)MAXBYTE;
 	fRightTrigger = (float)Xbox.State.Gamepad.bRightTrigger / (float)MAXBYTE;

@@ -377,8 +377,6 @@
   <ItemGroup>
     <ClCompile Include="HIDBOX.cpp" />
     <ClCompile Include="RumbleController.cpp" />
-    <ClCompile Include="HID.cpp" />
-    <ClCompile Include="AppAbs.cpp" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
