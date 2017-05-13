@@ -15,12 +15,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RumbleController.cpp" />
-    <ClCompile Include="HIDBOX.cpp" />
+    <ClCompile Include="AppAbs.cpp" />
+    <ClCompile Include="HIDXBOX.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HID.h" />
-    <ClInclude Include="HIDBOX.h" />
+    <ClInclude Include="HIDXBOX.h" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
