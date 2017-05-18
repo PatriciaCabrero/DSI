@@ -26,7 +26,7 @@
 //-----------------------------------------------------------------------------
 LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 void RenderFrame();
-RECT RVentana = { 0,0,1024,600 };
+RECT RVentana = { 0, 0 ,1024 ,600 };
 
 
 //-----------------------------------------------------------------------------
@@ -53,27 +53,20 @@ void generaEventos(){
 	HWND hWnd = GetActiveWindow();
 	
 	//JOYL2RATON
-	if (Control.TLX() != 0 | Control.TLY() != 0){
-		pt.x += Control.TLX()*10;
-		pt.y -= Control.TLY()*10;
+	if (Control.TLXf() >0.01 | Control.TLYf() >0.01 | Control.TLXf() <-0.01 | Control.TLYf() <-0.01){
+		pt.x += Control.TLXf()*10;
+		pt.y -= Control.TLYf()*10;
 		SetCursorPos(pt.x, pt.y);
 	}
 
 	GetWindowRect(GetDesktopWindow(), &RVentana);
 
-	if (Control.TRX() != 0 || Control.TRY() != 0) {
-		pt.x += Control.TRXf() * 10;
-		pt.y -= Control.TRYf() * 10;
+	if (Control.TRXf() > 0.01 | Control.TRXf() < -0.01 | Control.TRYf() > 0.01 | Control.TRYf() < -0.01) {
+		pt.x = RVentana.right / 2 + RVentana.right * 3 / 4 * Control.TRXf();
+		pt.y = RVentana.bottom / 2 - RVentana.bottom*3 / 4 * Control.TRYf();
 		SetCursorPos(pt.x, pt.y);
 	}
 	
-	/*if (Control.TRX() != 0 | Control.TRY() != 0) {
-		pt.x = ((RVentana.right / 2 + (RVentana.right / 2 * (Control.TRXf()*Control.velX()))));// *Control.velX()));// +RVentana.right / 2;
-		pt.y -= Control.TRYf() * 10;
-		//pt.y =-( RVentana.bottom / 2 + (RVentana.right / 2 * Control.TRYf())*Control.velY());
-		SetCursorPos(pt.x, pt.y);
-	}
-	*/
 	//BOTONES
 	if (Control.BD(XINPUT_GAMEPAD_X))
 		mouse_event(MOUSEEVENTF_LEFTDOWN, pt.x, pt.y, 0, NULL);

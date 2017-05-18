@@ -12,55 +12,54 @@ public:
 
 	bool bConected; //Mando conectado
 	void actualiza(){
+
 		wlastbuttons = wbuttons;
 		bConected = leeMando();
 		if (bConected) {
 			mando2HID();
-			fThumbRXf = (1 - aTR)*fThumbRXf + aTR*fThumbRX;
-			fThumbRYf = (1 - aTR)*fThumbRYf + aTR*fThumbRY;
 
-			if ((fThumbRX > 0.8) | (fThumbLX < -0.8)) {
-				fVelX = fVelX + aceleracion*fThumbRX;
-			}
-			else if ((fThumbRX > 0.01) | (fThumbRX < -0.01))
-				fVelX = (fVelX + aceleracion) / 2;
-			else
-				fVelX = fVelX*(1 - aceleracion);
+			//filtrado
+			fThumbLXf = (1 - aTR) * fThumbLXf + aTR*fThumbLX;
+			fThumbLYf = (1 - aTR) * fThumbLYf + aTR*fThumbLY;
 
-			fThumbLXf = (1 - aTR)*fThumbLXf + aTR*fThumbLX;
-			fThumbLYf = (1 - aTR)*fThumbLYf + aTR*fThumbLY;
+
+			//filtrado
+			fThumbRXf = (1 - aTR) * fThumbRXf + aTR*fThumbRX;
+			fThumbRYf = (1 - aTR) * fThumbRYf + aTR*fThumbRY;
 
 
 
+			//Rotacion
 			if ((fThumbLX > 0)&(fThumbLY > 0)) {
 				rot = pp;
-				tRot = 200.0;
+				tRot = 1.0;
 			}
 			if (tRot > 0) {
 				tRot = tRot - T;
-				if (rot == np) rot == pp;
-				if ((fThumbLX > 0) & (fThumbLY <= 0) & rot == pp) {
-					rot == pn;
+
+				if ((fThumbLX > 0 & fThumbLY <= 0 & rot == pp)) {
+					rot = pn;
 				}
-				if ((fThumbLX <= 0)& (fThumbLY < 0) & rot == pn)rot == nn;
-				if ((fThumbLX < 0)& (fThumbLY >= 0) & rot == nn)rot == np;
-				
+				if ((fThumbLX <= 0 & fThumbLY < 0 & rot == pn))rot = nn;
+				if ((fThumbLX < 0 & fThumbLY >= 0 & rot == nn))rot = np;
 			}
 			else rot = pp;
 
 			if (rot == np) {
 				fLeftMotor = 1;
-			}
+			}else
+				fLeftMotor *= 1 - (T / (0.5 + T));
+
 			wbuttonsDown = (~wlastbuttons)&(wbuttons);
 			wbuttonsUp = (wlastbuttons)&(~wbuttons);
 
-			if (wbuttonsDown) { fRightMotor = 1; 
+			if (wbuttonsDown) { 
+				fRightMotor = 1; 
 			}
 			else fRightMotor *= 1 - aFB;
-			escribeMando();
-			
 
-			//escribeMando();
+			escribeMando();
+
 		}
 	};
 
@@ -117,7 +116,7 @@ protected:
 	float fLeftTrigger, fRightTrigger;			   // [0.0 - 1.0]
 	float fThumbLX, fThumbLY, fThumbRX, fThumbRY; // [-1.0 - 1.0]
 	float fThumbRXf, fThumbRYf, fThumbLXf, fThumbLYf; //[-1.0 - 1.0] de momento no hace falta
-	const float aTR = T / (0.1 + T); //Filtro de los Thumb
+	const float aTR = T / (0.07 + T); //Filtro de los Thumb
 
 	//MOTOR
 	float fLeftMotor, fRightMotor; //[0.0 - 1.0]
